@@ -1,0 +1,43 @@
+name: Main workflow
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: 0 1 * * MON
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          # - ubuntu-latest
+          # - windows-latest
+        ocaml-compiler:
+          - 4.13.x
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: install opam
+        run: brew install -y opam m4
+
+      - name: init opam
+        run: opam init -y --compiler=4.07.1
+
+      - name: update opam
+        run: eval $(opam env) && opam update -uy
+
+      - name: install libraries and tools
+        run: eval $(opam env) && opam install -y async core js_of_ocaml js_of_ocaml-ppx merlin utop ocp-indent
+
+      - name: checkout examples
+        run: git clone https://github.com/janestreet/install-ocaml
+
+      - name: build and run hello world
+        run: cd install-ocaml/01-hello-world && dune build hello_world.exe && dune exec ./hello_world.exe
